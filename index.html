@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KAREN AI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="index.css">
+
+  <!-- Load face-api from CDN, fallback to local copy if CDN fails -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"
+          onerror="(function(){var s=document.createElement('script');s.src='/static/libs/face-api.min.js';s.defer=true;document.head.appendChild(s);})();">
+  </script>
+</head>
+<body>
+
+  <!-- single alarm audio element (served from Flask static) -->
+  <audio id="alarmSound" src="/static/alarm.mp3" preload="auto"></audio>
+
+  <div class="chat-container">
+    <h1 class="logo">KAREN <span>V7.3</span></h1>
+
+    <div class="chat-box" id="chatBox"></div> 
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type a message...">
+      <button id="sendBtn" type="button" onclick="sendMessage()">➤</button>
+    </div>
+
+    <!-- video moved to top-right corner with styling -->
+    <video id="cameraFeed" autoplay playsinline style="display:none; position:fixed; top:24px; right:24px; width:320px; height:240px; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.6); z-index:9999;"></video>
+  </div>
+
+  <!-- Floating Voice Buttons -->
+  <button id="voiceBtn" type="button" onclick="toggleVoice()">🔊</button>
+  <button id="voiceRecordBtn" type="button" onclick="startListening()">🎙</button>
+
+  <!-- camera control buttons -->
+  <button id="openCamBtn" type="button" onclick="openCameraAndDetect()">Open Camera</button>
+  <button id="stopCamBtn" type="button" onclick="stopCameraDetection()">Stop Camera</button>
+
+  <script>
+    // single consolidated alert checker
+    let alarmPlayed = false;
+    async function checkAlert() {
+      try {
+        const response = await fetch("/check");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.alert && !alarmPlayed) {
+          const alarm = document.getElementById("alarmSound");
+          // attempt to play (catch to avoid unhandled rejections)
+          await alarm.play().catch(() => {});
+          alarmPlayed = true;
+          console.log("🚨 Alarm played!");
+        }
+      } catch (error) {
+        console.error("Error checking alert:", error);
+      }
+    }
+    setInterval(checkAlert, 2000); // check every 2s
+  </script>
+
+  <script src="index.js" defer></script>
+</body>
+</html>
